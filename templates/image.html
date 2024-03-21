@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}
+
+{{ image.title }} - SupaArchive
+
+{% endblock %}
+
+{% block content %}
+    <div class="content-center grid grid-cols-1">
+        <div class="max-w-screen-lg  border-slate-200 shadow-lg place-self-center float-center">
+            <img src="/imgproxy/optimized/{{ image._id }}" alt="{{ image.title }}" class="object-scale-down rounded-lg">
+        </div>
+
+        <div class="mt-4 border-4 border-blue-300 rounded-lg p-4 shadow-lg">
+            <h1 class="text-xl text-slate-600 font-bold">{{ image.title }}</h1>
+            <div class="flex flex-wrap">
+            {% for tag in image.tags %}
+                <a class="text-xs text-slate-600 bg-slate-200 rounded-full p-2 m-1 mt-1 hover:text-white hover:bg-blue-600" href="/search?query={{tag}}"><span>{{ tag }}</span></a>
+            {% endfor %}
+            </div>
+
+            {%if image.pixiv_author_id %}
+            Artist: <a href='/search?query=artist%3A"{{ image.author_name }}"'>{{ image.author_name }}</a>
+                <a href="https://www.pixiv.net/en/users/{{ image.pixiv_author_id }}" class="text-blue-500 hover:text-blue-700 text-lg" target="_blank">
+                    (<i class="fa-brands fa-pixiv"></i> Pixiv)
+                </a>
+            {% else %}
+                Artist: <a href='/search?query=artist%3A"{{ image.author_name }}"'>{{ image.author_name }}</a>
+            {% endif %}
+            <div class="mt-4 mb-4">
+                {% if image.pixiv_source_id %}
+                    <a href="https://www.pixiv.net/en/artworks/{{ image.pixiv_source_id }}" class="text-blue-500 hover:text-blue-700 text-lg" target="_blank">
+                        <i class="fa-brands fa-pixiv"></i> View on Pixiv
+                    </a>
+                {% endif %}
+                {% if image.gelbooru_id %}
+                    <a href="https://gelbooru.com/index.php?page=post&s=view&id={{ image.gelbooru_id }}" class="text-blue-500 hover:text-blue-700 text-lg" target="_blank">
+                        <i class="fa-solid fa-arrow-up-right-from-square"></i> View on Gelbooru
+                    </a>
+                {% endif %}
+
+                <br />
+                {% if pixiv_pages_flag %}
+                    <a href="/search?query=pixiv_id:{{ image.pixiv_source_id }}" class="text-blue-500 hover:text-blue-700 text-lg">
+                        <i class="fa-solid fa-images"></i> This is part of a set. View other pages.
+                    </a>
+                {% endif %}
+            </div>
+
+
+            <p class="text-balance text-pretty text-wrap text-lg whitespace-pre-line">{{ image.description }}</p>
+
+            {% if pixiv_pages_flag %}
+                <p class="text-slate-600 text-lg mt-2 text-bold">Other pages in set:</p>
+                <div class="flex auto-cols-auto flex-wrap">
+                    {% for page in pixiv_set %}
+                        <div class="w-16 m-4 p-2 max-w-32 flex-1 basis-1/4 grid grid-cols-1">
+                            <div>
+                                <a href="/image/{{ page._id }}">
+                                    <img src="/imgproxy/thumbnail/{{ page._id }}" class="object-scale-down" alt="{{ page.title }}">
+                                </a>
+                            </div>
+                            <div>
+                                <p>{{ page.page_no+1 }}</p>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            {% if image.translated %}
+                <p class="text-slate text-lg mt-2 text-bold"><i class="fa-solid fa-language"></i> This has already been translated.</p>
+            {% else %}
+                <button id="translate_btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onclick="translateArtwork()"><i class="fa-solid fa-language"></i> Translate</button>
+            {% endif %}
+
+            <a href="{{ image.url }}"><button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"><i class="fa-solid fa-download"></i> See original size</button></a>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <h1 class="text-xl text-slate-600">Related images</h1>
+        <div class="flex auto-cols-auto flex-wrap justify-center">
+            {% for related in similar %}
+                <div class="w-32 m-4 p-2 flex-1 basis-1/4 grid grid-cols-1 max-w-32 lg:max-w-64">
+                    <div>
+                        <a href="/image/{{ related._id }}">
+                            <img src="/imgproxy/thumbnail/{{ related._id }}" class="object-scale-down" alt="{{ related.title }}">
+                        </a>
+                    </div>
+                    <div>
+                        <p><i class="fa-solid fa-bullseye"></i> {{ (related.score * 100)|round(1) }}%</i></p>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+<script>
+    function translateArtwork() {
+        document.getElementById('translate_btn').disabled = true
+        document.getElementById('translate_btn').innerHTML = '<i class="fa-solid fa-spinner"></i> Translating...'
+        fetch('/api/translate', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'image_id': '{{ image._id }}'
+            })
+        }).then(response => response.json()).then(data => {
+            window.location.reload()
+        })
+    }
+</script>
+{% endblock %}

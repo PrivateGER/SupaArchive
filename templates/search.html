@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="text-slate-600 text-xl text-bold">Search</h1>
+    <form action="/search" method="get" class="grid grid-flow-row	 border-2 border-slate-300 p-4 mb-4 sticky top-0 bg-gray-100">
+        <div class="grid-row">
+            <input type="text" name="query" class="border-2 border-blue-300 p-2 rounded-lg" placeholder="Search for tags..." value="{{ query }}">
+            <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"><i class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+        <div class="flex flex-wrap mt-4 gap-2">
+            <label for="neuralsearch" class="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-700">
+                <input type="checkbox" name="neural" id="neuralsearch" value="True" {% if neural %}checked{% endif %}>
+                <i class="fa-solid fa-brain"></i> Use neural search
+            </label>
+            <label for="group_sets" class="p-2 rounded-lg bg-blue-500 text-white hover:bg-blue-700">
+                <input type="checkbox" name="group_sets" id="group_sets" value="True" {% if group_sets %}checked{% endif %}>
+                <i class="fa-solid fa-layer-group"></i> Group sets together
+            </label>
+        </div>
+    </form>
+    {% if query %}
+        <p>Found {{results|length}}{% if results|length == 25 %}+{% endif %} {% if neural %}neural{% endif %} results for <strong>"{{ query }}"</strong> in {{(time*100)|round(3)}}ms.</p>
+        {% if neural and group_sets %}
+            <p class="font-bold	">Note: Neural search disables grouped sets.</p>
+        {% endif %}
+        <div class="flex flex-row flex-wrap gap-4 mt-4 justify-center items-center">
+            {% for image in results %}
+                <div class="flex-initial p-0 m-0 last:grow-0 max-w-32 lg:max-w-64 border-2 border-black">
+                    <a href="/image/{{ image._id }}">
+                        <img src="/imgproxy/thumbnail/{{ image._id }}" class="object-scale-down" alt="{{ image.title }}">
+                    </a>
+                    {% if image.score %}
+                        <p class="text-center">{{ image.score|round(3) }}</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if not results %}
+            <p>No results found for <strong>{{ query }}</strong></p>
+        {% endif %}
+
+        <div class="grid grid-rows-3">
+            <div class="row-start-3 place-self-center">
+                {% if page > 1 %}
+                    <a href="/search?query={{ query }}&page={{ page - 1 }}{% if neural %}&neural=True{% endif %}{% if group_sets %}&group_sets=True{% endif %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Previous</a>
+                {% else %}
+                    <p class="bg-gray-500 hover:bg-blue-200 text-white font-bold py-2 px-4 rounded">Previous</p>
+                {% endif %}
+            </div>
+            <div class="row-start-3 place-self-center">
+                <p class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">{{ page }}</p>
+            </div>
+            <div class="row-start-3 place-self-center">
+                {% if results|length == 25 %}
+                    <a href="/search?query={{ query }}&page={{ page + 1 }}{% if neural %}&neural=True{% endif %}{% if group_sets %}&group_sets=True{% endif %}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Next</a>
+                {% else %}
+                    <p class="bg-gray-500 hover:bg-blue-200 text-white font-bold py-2 px-4 rounded">Next</p>
+                {% endif %}
+            </div>
+        </div>
+        {% if neural %}
+            <p class="text-center text-bold mt-2">
+                Neural search will return <strong>infinite</strong> pages of results. Pay attention to the accuracy values.
+                <br />
+                <strong>Accuracy</strong> is a value between 0 and 1, where 1 is a perfect match (which is impossible for text-search).
+            </p>
+        {% endif %}
+    {% endif %}
+
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1 class="text-2xl text-slate-700">Recently added sets</h1>
+    <div class="flex flex-row flex-wrap gap-4 mt-4 justify-center items-center">
+        {% for image in images %}
+            <div class="flex-initial p-0 m-0 last:grow-0 max-w-32 lg:max-w-64 border-2 border-black relative drop-shadow-xl">
+                <a href="/image/{{ image.id }}">
+                    <img src="/imgproxy/thumbnail/{{ image.id }}" class="object-scale-down" alt="{{ image.title }}">
+                </a>
+                {% if not image.vitEmbedding %}
+                    <div class="absolute z-10 top-0 left-0 right-0 bottom-0 flex justify-center items-center">
+                        <p class="text-white bg-black bg-opacity-75 text-xl text-center">
+                            <i class="fa-solid fa-circle-exclamation"></i><br />
+                            No embeddings available
+                        </p>
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+
+    <div class="grid grid-rows-3">
+        <div class="row-start-3 place-self-center">
+            {% if page > 1 %}
+                <a href="/gallery?page={{ page - 1 }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Previous</a>
+            {% else %}
+                <p class="bg-gray-500 hover:bg-blue-200 text-white font-bold py-2 px-4 rounded">Previous</p>
+            {% endif %}
+        </div>
+        <div class="row-start-3 place-self-center">
+            <p class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">{{ page }}</p>
+        </div>
+        <div class="row-start-3 place-self-center">
+            {% if images|length == 25 %}
+                <a href="/gallery?page={{ page + 1 }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Next</a>
+            {% else %}
+                <p class="bg-gray-500 hover:bg-blue-200 text-white font-bold py-2 px-4 rounded">Next</p>
+            {% endif %}
+        </div>
+
+    </div>
+{% endblock %}

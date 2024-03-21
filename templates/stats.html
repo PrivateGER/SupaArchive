@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}
+SupaArchive Instance Statistics
+{% endblock %}
+
+{% block content %}
+
+<h1 class="text-2xl text-slate-700">SupaArchive Instance Statistics</h1>
+
+<div class="grid grid-cols-1 gap-4 mt-4 drop-shadow">
+    <div class="bg-blue-200 p-4 rounded-lg">
+        <h2 class="text-xl text-slate-700">Total number of images</h2>
+        <p class="text-2xl text-slate-800">{{ total_images }}</p>
+    </div>
+
+    <div class="bg-blue-200 p-4 rounded-lg drop-shadow">
+        <h2 class="text-xl text-slate-700">Total number of sets</h2>
+        <p class="text-2xl text-slate-800">{{ total_sets }}</p>
+    </div>
+
+    <div class="bg-blue-200 p-4 rounded-lg drop-shadow">
+        <h2 class="text-xl text-slate-700">Average images per set</h2>
+        <p class="text-2xl text-slate-800">{{ (total_images / total_sets)|round(2) }}</p>
+    </div>
+
+    <div class="bg-blue-200 p-4 rounded-lg drop-shadow">
+        <h2 class="text-xl text-slate-700">Total unique tags</h2>
+        <p class="text-2xl text-slate-800">{{ total_tags }}</p>
+    </div>
+
+    <div class="bg-blue-200 p-4 rounded-lg drop-shadow">
+        <h2 class="text-xl text-slate-700">Total artists</h2>
+        <p class="text-2xl text-slate-800">{{ total_artists }}</p>
+    </div>
+
+    <div class="p-4 text-xl justify-center">
+        <h2 class="text-xl text-slate-700">Top tags</h2>
+        <table class="table-auto mt-4 drop-shadow">
+            <thead class="bg-slate-400">
+                <tr>
+                    <th class="px-8 py-4">Tag</th>
+                    <th class="px-8 py-4">Count</th>
+                </tr>
+            </thead>
+            <tbody class="bg-slate-300">
+                {% for tag in top_tags %}
+                <tr>
+                    <td class="border px-8 py-4">{{ tag.tag }}</td>
+                    <td class="border px-8 py-4">{{ tag.count }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{% endblock %}
