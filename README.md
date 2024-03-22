@@ -1,4 +1,4 @@
-<center><img src="static/full_logo.svg"  alt="SupaArchive logo"/></center>
+<p align="center"><img src="static/full_logo.svg"  alt="SupaArchive logo"/></p>
 
 SupaArchive is a web-based multi-site image-archival tool, designed to help you store and manage your collection in an organized manner.
 
