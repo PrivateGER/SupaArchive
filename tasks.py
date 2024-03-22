@@ -18,8 +18,17 @@ from async_task import async_task
 from database import CONNECTION_STRING, Artwork
 from s3 import upload_file
 from schema import PixivDownloadBatch
+from kombu import Exchange, Queue
 
-app = Celery('tasks', broker='redis://localhost', backend='redis://localhost', result_expires=60*60*24)
+app = Celery('tasks', broker=config.CELERY_RABBITMQ_URL, backend=config.REDIS_URL, result_expires=60 * 60 * 24)
+app.conf.task_default_queue = 'tasks'
+app.conf.task_queues = [
+    Queue('tasks', routing_key='tasks.#', queue_arguments={'x-max-priority': 10, 'celeryd_prefetch_multiplier': 1}, max_priority=10),
+]
+app.conf.update(
+    worker_prefetch_multiplier=1
+)
+
 gelbooru = Gelbooru()
 
 @app.task
@@ -84,8 +93,7 @@ def downloadPixivImage(pixivImage: PixivDownloadBatch):
             else:
                 artwork.s3_object_name = upload_file(temp, sha256, os.path.splitext(pixivImage.url)[1][1:])
                 artwork_collection.insert_one(artwork.model_dump(by_alias=True))
-                sleep(1)
-                model_worker.generate_embeddings.delay([sha256])
+                model_worker.generate_embeddings.apply_async([sha256], countdown=10)
 
 
 @app.task
@@ -129,8 +137,7 @@ def downloadGelbooru(gelbooruImage):
             else:
                 artwork.s3_object_name = upload_file(temp, sha256, os.path.splitext(gelbooruImage["url"])[1][1:])
                 artwork_collection.insert_one(artwork.model_dump(by_alias=True))
-                sleep(1)
-                model_worker.generate_embeddings.delay([sha256])
+                model_worker.generate_embeddings.apply_async([sha256], countdown=10)
 
 
 @async_task(app, bind=True)

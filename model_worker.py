@@ -18,9 +18,17 @@ import torch
 from PIL import Image
 import open_clip
 from qdrant_client.models import VectorParams, Distance, PointStruct, Filter, FieldCondition, MatchText, IsNullCondition, MatchValue, PayloadField
+from kombu import Exchange, Queue
 
-app = Celery('model_worker', broker=config.CELERY_REDIS_BROKER, backend=config.CELERY_REDIS_BROKER, result_expires=60*60*24)
+
+app = Celery('model_worker', broker=config.CELERY_RABBITMQ_URL, backend=config.REDIS_URL, result_expires=60 * 60 * 24)
 app.conf.task_default_queue = 'model_worker'
+app.conf.task_queues = [
+    Queue('model_worker', routing_key='model_tasks.#', queue_arguments={'x-max-priority': 10}, max_priority=10),
+]
+app.conf.update(
+    worker_prefetch_multiplier=1
+)
 
 model, preprocess, tokenizer, qdrant_client = None, None, None, None
 loadingMutex = Lock()

@@ -8,10 +8,11 @@ import httpx
 import requests
 from fastapi import FastAPI, Body
 from starlette.requests import Request
-from starlette.responses import StreamingResponse
+from starlette.responses import StreamingResponse, Response
 
 import config
 import model_worker
+import redis_conn
 import s3
 import tasks
 from database import artwork_collection, translation_collection
@@ -123,41 +124,41 @@ async def imgproxy(image_id: str):
     artwork = await artwork_collection.find_one({"_id": image_id})
     encoded_url = base64.b64encode(f"{s3.base_url}{artwork['s3_object_name']}".encode("utf-8")).decode("utf-8")
 
-    # Check if file is cached in tempdir
-    # If not, fetch from imgproxy
-    if os.path.exists(f"/tmp/{artwork.id}.webp"):
-        return StreamingResponse(open(f"/tmp/{artwork.id}.webp", "rb"), media_type="image/webp")
+    redis = redis_conn.redis_client
+
+    # Check if file is cached in redis
+    if redis.exists(f"{artwork['_id']}:thumbnail"):
+        return Response(content=bytes(redis.get(f"{artwork['_id']}:thumbnail")), media_type="image/webp")
 
     # return a streaming response
     url = httpx.URL(f"{config.IMGPROXY_THUMBNAIL_BASE_URL}{encoded_url}.webp")
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
-        # save to tempdir
-        with open(f"/tmp/{artwork.id}.webp", "wb") as f:
-            f.write(response.content)
+        # save to redis
+        redis.setex(f"{artwork['_id']}:thumbnail", 60 * 60 * 24 * 7, response.content)
 
-        return StreamingResponse(BytesIO(response.content), media_type="image/webp")
+        return Response(content=response.content, media_type="image/webp")
 
 
 @app.get("/imgproxy/optimized/{image_id}")
-async def imgproxy(image_id: str):
+async def optimized_artwork(image_id: str):
     artwork = await artwork_collection.find_one({"_id": image_id})
     encoded_url = base64.b64encode(f"{s3.base_url}{artwork['s3_object_name']}".encode("utf-8")).decode("utf-8")
 
-    # Check if file is cached in tempdir
-    # If not, fetch from imgproxy
-    if os.path.exists(f"/tmp/{artwork.id}_orig.webp"):
-        return StreamingResponse(open(f"/tmp/{artwork.id}_orig.webp", "rb"), media_type="image/webp")
+    redis = redis_conn.redis_client
+
+    # Check if file is cached in redis
+    if redis.exists(f"{artwork['_id']}:optimized"):
+        return Response(content=redis.get(f"{artwork['_id']}:optimized"), media_type="image/webp")
 
     # return a streaming response
     url = httpx.URL(f"{config.IMGPROXY_OPTIMIZED_BASE_URL}{encoded_url}.webp")
     async with httpx.AsyncClient() as client:
         response = await client.get(url)
-        # save to tempdir
-        with open(f"/tmp/{artwork.id}_orig.webp", "wb") as f:
-            f.write(response.content)
+        # save to redis
+        redis.setex(f"{artwork['_id']}:optimized", 60 * 60 * 24, response.content)
 
-        return StreamingResponse(BytesIO(response.content), media_type="image/webp")
+        return Response(content=response.content, media_type="image/webp")
 
 
 @app.get("/search")
@@ -174,11 +175,12 @@ async def search(request: Request, query: str = None, page: int = 1, neural: boo
             split_tags = query.split(" ")
             results = []
             if neural:
-                search_task = model_worker.neural_search.delay(query, page=page, limit=25)
+                search_task = model_worker.neural_search.apply_async(args=[query], kwargs={"page": page, "limit": 25},
+                                                                     priority=10)
                 search_task.wait()
                 results = search_task.get()
             else:
-                search_task = model_worker.tag_search.delay(split_tags, page, 25, group_sets=group_sets)
+                search_task = model_worker.tag_search.apply_async(args=[split_tags], kwargs={"page": page, "limit": 25, "group_sets": group_sets}, priority=10)
                 search_task.wait()
                 results = search_task.get()
 
@@ -272,7 +274,6 @@ async def delete_videos():
 
 @app.post("/api/clearcache")
 async def clear_cache():
-    for file in os.listdir("/tmp"):
-        if file.endswith(".webp"):
-            os.remove(f"/tmp/{file}")
+    redis = redis_conn.redis_client
+    redis.flushdb()
     return {"message": "Cleared cache."}
