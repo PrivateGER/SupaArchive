@@ -9,17 +9,19 @@
     <script src="https://cdn.tailwindcss.com"></script>
 
 <body class="bg-gray-100">
-    <header class="bg-blue-500 text-white p-4">
-        <div class="container mx-auto">
-            <h1>{% block header %}SupaArchive - We hate front-end design in this house{% endblock %}</h1>
-        </div>
-    </header>
-
     <nav class="bg-gray-200 p-4">
         <div class="container mx-auto">
             <!-- Navigation Links -->
-            <ul class="flex space-x-4">
-                <li><a href="/" class="text-blue-500 hover:text-blue-700">Home</a></li>
+            <ul class="flex space-x-4 justify-center items-center">
+                <li></li>
+                <li>
+                    <a href="/" class="text-blue-500 hover:text-blue-700">
+                    <div class="flex justify-center items-center">
+                        <img src="/static/mini.svg" alt="The supaarchive logo" class="justify-center align-middle h-4" />
+                        <p class="text-nowrap">&nbsp;Home</p>
+                    </div>
+                    </a>
+                </li>
                 <li><a href="/gallery" class="text-blue-500 hover:text-blue-700">Gallery</a></li>
                 <li><a href="/search" class="text-blue-500 hover:text-blue-700">Search</a></li>
                 <li><a href="/stats" class="text-blue-500 hover:text-blue-700">Stats</a></li>
@@ -41,8 +43,5 @@
             {% endblock %}
         </div>
     </footer>
-
-    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js" integrity="sha384-IQsoLXl5PILFhosvnGz93A5vTcMEMOlKnu3Rz7gjH7ctxYv3L1qG9lFw5jRGvFXOd" crossorigin="anonymous"></script>
 </body>
 </html>
