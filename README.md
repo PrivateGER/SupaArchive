@@ -4,7 +4,8 @@ SupaArchive is a web-based multi-site image-archival tool, designed to help you 
 
 It features built-in support for multiple import sites, has machine-learning powered image search, tag search, description and title translation, and more. 
 
-# ⚠️This is pre-alpha software and not ready for anything but development use.
+> [!CAUTION]
+> This is pre-alpha software and not ready for anything but development use.
 
 ### Current supported sources
 | Source                            | Import | Userscript |
